@@ -253,6 +253,12 @@ const POSKEY = `sqlmodelviewer-pos-${DATA.databaseName}-v1`;
 try { const s = JSON.parse(localStorage.getItem(POSKEY) || "{}"); for (const k in s) if (T[k]) { T[k].x = s[k][0]; T[k].y = s[k][1]; } } catch(e){}
 function savePos(){ try { const o={}; for (const k in T) o[k]=[T[k].x,T[k].y]; localStorage.setItem(POSKEY, JSON.stringify(o)); } catch(e){} }
 
+// Remembers the selected table across regeneration/reload (e.g. clicking "Generate" again in the
+// app reloads this page from scratch) so the click-to-highlight-related-tables state survives it.
+const SELKEY = `sqlmodelviewer-sel-${DATA.databaseName}-v1`;
+function saveSelection(){ try { if (selected) localStorage.setItem(SELKEY, selected); else localStorage.removeItem(SELKEY); } catch(e){} }
+function loadSelection(){ try { const k = localStorage.getItem(SELKEY); return (k && T[k]) ? k : null; } catch(e){ return null; } }
+
 const hiddenSchemas = new Set();
 let selected = null;
 let isolateHops = 0;
@@ -444,6 +450,7 @@ panel.addEventListener("click", e => {
 function select(key, center){
   selected = key;
   if (key && hiddenSchemas.has(T[key].schema)) hiddenSchemas.delete(T[key].schema);
+  saveSelection();
   paint();
   if (key && center) centerOn(key);
 }
@@ -604,6 +611,7 @@ function flashColumn(key, colName){
 q.addEventListener("change", findTable);
 q.addEventListener("keydown", e => { if (e.key === "Enter") findTable(); });
 
+selected = loadSelection();
 layout(); paint();
 requestAnimationFrame(fit);
 window.addEventListener("resize", () => { if (!drag) fit(); });
