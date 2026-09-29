@@ -77,7 +77,8 @@ public partial class MainWindowViewModel : ViewModelBase
             // old Database Diagrams tool), never a real user table — exclude it by default.
             var userTables = tables.Where(t => !t.Table.Equals("sysdiagrams", StringComparison.OrdinalIgnoreCase)).ToList();
             SchemaTree.Load(userTables);
-            StatusMessage = $"{userTables.Count} tables found in {Connection.SelectedDatabase}. Select tables and click Generate.";
+            SchemaTree.SelectAllCommand.Execute(null);
+            StatusMessage = $"{userTables.Count} tables found in {Connection.SelectedDatabase}. Uncheck any you don't want, then click Generate.";
         }
         catch (Exception ex)
         {

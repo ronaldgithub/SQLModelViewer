@@ -94,6 +94,25 @@ tests/
   `MainWindowViewModel`'s existing `PropertyChanged` subscription before the dialog even closes —
   no extra plumbing needed. Picking a database (by hand or via a recent-connection auto-reconnect)
   closes the dialog immediately; there's no separate "OK" button for that step.
+- App/`Views/MainWindow.axaml(.cs)` — the sidebar (connection summary + table tree) is collapsible
+  via a toggle button (`SidebarToggleButton`/`SidebarToggle_Click`), which resizes `RootGrid`'s
+  first `ColumnDefinition` directly in code-behind rather than through a binding — Avalonia doesn't
+  auto-generate a named field for `x:Name` on a bare `ColumnDefinition` the way it does for
+  controls, so the outer `Grid` itself is named instead and indexed
+  (`RootGrid.ColumnDefinitions[0]`). `LoadTablesAsync` auto-selects every loaded table
+  (`SchemaTree.SelectAllCommand.Execute(null)`) right after connecting, so `Generate` is usable
+  immediately without an extra "select tables" step — uncheck what you don't want instead.
+- App/`Views/AboutDialog.axaml(.cs)` — static about box (version read via reflection from the
+  assembly, contact email/website links opened via `Process.Start(UseShellExecute: true)`, same
+  pattern as `OpenInBrowser`).
+- `Rendering/Templates/diagram.template.html`'s own right-hand `<aside>` panel is independently
+  collapsible from *within the generated diagram itself* (`#togglePanel` button, `.panel-collapsed`
+  CSS class toggling `grid-template-columns`) — this is unrelated to the App's own sidebar toggle
+  above; it exists so the diagram reads the same way whether viewed inside the App's embedded
+  preview or standalone in a real browser. Selecting a table also gives its direct FK neighbors a
+  distinct highlight color (`.node.related`, `--related` CSS var) in addition to the existing
+  dim-everything-else behavior, so "what connects to this table" is visible at a glance without
+  having to read the edge lines.
 
 ## Data flow
 

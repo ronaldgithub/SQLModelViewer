@@ -10,7 +10,7 @@
 :root{
   --bg:#EEF1F5; --surface:#FFFFFF; --ink:#18212C; --muted:#5B6778; --line:#D3D9E2; --grid:#CBD2DC;
   --edge:#8995A5; --edge-hi:#18212C; --sel:#18212C; --chip:#E6EAF0;
-  --warn:#9A5B00; --err:#B3261E;
+  --warn:#9A5B00; --err:#B3261E; --related:#2B6CE0;
   --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   --schema-l:55%; --schema-s:52%;
@@ -20,7 +20,7 @@
     color-scheme:dark;
     --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
     --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
-    --warn:#E0A451; --err:#E5867D;
+    --warn:#E0A451; --err:#E5867D; --related:#6FA0FF;
     --schema-l:66%; --schema-s:48%;
   }
 }
@@ -28,12 +28,14 @@
   color-scheme:dark;
   --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
   --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
-  --warn:#E0A451; --err:#E5867D;
+  --warn:#E0A451; --err:#E5867D; --related:#6FA0FF;
   --schema-l:66%; --schema-s:48%;
 }
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
 .app{height:100%;display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr 340px}
+.app.panel-collapsed{grid-template-columns:1fr}
+.app.panel-collapsed aside{display:none}
 header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
 .brand{display:flex;flex-direction:column;min-width:0}
 h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
@@ -86,6 +88,8 @@ ul.gaps code{font-family:var(--mono);font-size:12px;color:var(--ink)}
 .node{cursor:pointer}
 .node:focus{outline:none}
 .node:focus-visible .card,.node.sel .card{stroke:var(--sel);stroke-width:2}
+.node.related .card{stroke:var(--related);stroke-width:2}
+.node.related .tname{fill:var(--related)}
 .tname{font-size:13.5px;font-weight:600;fill:var(--ink)}
 .trowcount{font-family:var(--mono)!important;font-size:10px;fill:var(--muted)}
 .col{font-family:var(--mono)!important;font-size:12px;fill:var(--ink)}
@@ -135,6 +139,7 @@ ul.gaps code{font-family:var(--mono);font-size:12px;color:var(--ink)}
       <button class="btn" id="zoomIn" aria-label="Zoom in">+</button>
       <button class="btn" id="fit">Fit</button>
       <button class="btn" id="reset">Reset layout</button>
+      <button class="btn" id="togglePanel" aria-label="Hide side panel">Hide panel</button>
     </div>
   </header>
   <div class="stage">
@@ -307,6 +312,7 @@ function paint(){
     const hiddenByIsolate = isolateSet && !isolateSet.has(k);
     t.g.style.display = (hiddenBySchema || hiddenByIsolate) ? "none" : "";
     t.g.classList.toggle("sel", k === selected);
+    t.g.classList.toggle("related", !!selected && k !== selected && directNb.has(k));
     t.g.classList.toggle("dim", !!selected && !directNb.has(k));
   }
   FKS.forEach(f => {
@@ -460,6 +466,11 @@ document.getElementById("reset").onclick = () => {
   layout(); fit();
 };
 document.getElementById("isolate").addEventListener("change", e => { isolateHops = Number(e.target.value)||0; paint(); });
+document.getElementById("togglePanel").onclick = () => {
+  const collapsed = document.querySelector(".app").classList.toggle("panel-collapsed");
+  document.getElementById("togglePanel").textContent = collapsed ? "Show panel" : "Hide panel";
+  requestAnimationFrame(fit);
+};
 
 const q = document.getElementById("q");
 function findTable(){

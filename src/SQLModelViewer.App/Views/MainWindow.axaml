@@ -7,7 +7,7 @@
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="SQLModelViewer.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Icon="/Assets/avalonia-logo.ico"
+        Icon="/Assets/app.ico"
         Title="SQLModelViewer"
         Width="1280" Height="800">
 
@@ -15,52 +15,65 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid RowDefinitions="Auto,*" ColumnDefinitions="280,*">
+    <Grid x:Name="RootGrid" RowDefinitions="Auto,*">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
 
         <!-- Toolbar -->
         <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Padding="12" BorderBrush="{DynamicResource SystemBaseLowColor}" BorderThickness="0,0,0,1">
-            <StackPanel Orientation="Horizontal" Spacing="10">
-                <Button Content="Generate" Command="{Binding GenerateCommand}" IsEnabled="{Binding !IsGenerating}"/>
-                <Button x:Name="SaveAsButton" Content="Save HTML As…" Click="SaveAsButton_Click" IsEnabled="{Binding Preview.HasDiagram}"/>
-                <Button Content="Open in Browser" Command="{Binding OpenInBrowserCommand}" IsEnabled="{Binding Preview.HasDiagram}"/>
-                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="16,0,0,0" Opacity="0.8"/>
-            </StackPanel>
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10">
+                    <Button Content="Generate" Command="{Binding GenerateCommand}" IsEnabled="{Binding !IsGenerating}"/>
+                    <Button x:Name="SaveAsButton" Content="Save HTML As…" Click="SaveAsButton_Click" IsEnabled="{Binding Preview.HasDiagram}"/>
+                    <Button Content="Open in Browser" Command="{Binding OpenInBrowserCommand}" IsEnabled="{Binding Preview.HasDiagram}"/>
+                    <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="16,0,0,0" Opacity="0.8"/>
+                </StackPanel>
+                <Button Grid.Column="1" Content="About" Click="AboutButton_Click"/>
+            </Grid>
         </Border>
 
-        <!-- Left sidebar: connection summary + schema tree -->
+        <!-- Left sidebar: connection summary + schema tree, collapsible -->
         <Grid Grid.Row="1" Grid.Column="0" RowDefinitions="Auto,*" Margin="12">
-            <StackPanel Spacing="6" x:DataType="vm:ConnectionViewModel" DataContext="{Binding Connection}">
-                <TextBlock Text="CONNECTION" FontWeight="Bold" FontSize="11" Opacity="0.6"/>
-                <TextBlock Text="{Binding ConnectionSummary}" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                <Button x:Name="ConnectButton" Content="Connect…" Click="ConnectButton_Click"
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
-            </StackPanel>
+            <Button x:Name="SidebarToggleButton" Grid.Row="0" Content="◀" Click="SidebarToggle_Click"
+                    Width="28" Height="28" Padding="0" HorizontalAlignment="Left" Margin="0,0,0,8"
+                    ToolTip.Tip="Hide sidebar"/>
 
-            <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*" Margin="0,16,0,0" x:DataType="vm:SchemaTreeViewModel" DataContext="{Binding SchemaTree}">
-                <TextBlock Text="TABLES" FontWeight="Bold" FontSize="11" Opacity="0.6"/>
-                <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,6">
-                    <TextBox Grid.Column="0" PlaceholderText="Filter…" Text="{Binding FilterText}"/>
-                    <Button Grid.Column="1" Content="All" Command="{Binding SelectAllCommand}" Margin="4,0,0,0"/>
-                    <Button Grid.Column="2" Content="None" Command="{Binding SelectNoneCommand}" Margin="4,0,0,0"/>
+            <Grid x:Name="SidebarContent" Grid.Row="1" RowDefinitions="Auto,*">
+                <StackPanel Grid.Row="0" Spacing="6" x:DataType="vm:ConnectionViewModel" DataContext="{Binding Connection}">
+                    <TextBlock Text="CONNECTION" FontWeight="Bold" FontSize="11" Opacity="0.6"/>
+                    <TextBlock Text="{Binding ConnectionSummary}" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                    <Button x:Name="ConnectButton" Content="Connect…" Click="ConnectButton_Click"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"/>
+                </StackPanel>
+
+                <Grid Grid.Row="1" RowDefinitions="Auto,Auto,*" Margin="0,16,0,0" x:DataType="vm:SchemaTreeViewModel" DataContext="{Binding SchemaTree}">
+                    <TextBlock Text="TABLES" FontWeight="Bold" FontSize="11" Opacity="0.6"/>
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" Margin="0,6">
+                        <TextBox Grid.Column="0" PlaceholderText="Filter…" Text="{Binding FilterText}"/>
+                        <Button Grid.Column="1" Content="All" Command="{Binding SelectAllCommand}" Margin="4,0,0,0"/>
+                        <Button Grid.Column="2" Content="None" Command="{Binding SelectNoneCommand}" Margin="4,0,0,0"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="2">
+                        <ItemsControl ItemsSource="{Binding Schemas}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:SchemaNodeViewModel">
+                                    <StackPanel Margin="0,4">
+                                        <CheckBox IsThreeState="True" IsChecked="{Binding IsChecked}" Content="{Binding SchemaName}" FontWeight="SemiBold"/>
+                                        <ItemsControl ItemsSource="{Binding VisibleTables}" Margin="20,0,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="vm:TableNodeViewModel">
+                                                    <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Name}"/>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
-                <ScrollViewer Grid.Row="2">
-                    <ItemsControl ItemsSource="{Binding Schemas}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:SchemaNodeViewModel">
-                                <StackPanel Margin="0,4">
-                                    <CheckBox IsThreeState="True" IsChecked="{Binding IsChecked}" Content="{Binding SchemaName}" FontWeight="SemiBold"/>
-                                    <ItemsControl ItemsSource="{Binding VisibleTables}" Margin="20,0,0,0">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate x:DataType="vm:TableNodeViewModel">
-                                                <CheckBox IsChecked="{Binding IsChecked}" Content="{Binding Name}"/>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
             </Grid>
         </Grid>
 

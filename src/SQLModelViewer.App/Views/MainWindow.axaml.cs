@@ -48,4 +48,21 @@ public partial class MainWindow : Window
     {
         Process.Start(new ProcessStartInfo("https://developer.microsoft.com/microsoft-edge/webview2/") { UseShellExecute = true });
     }
+
+    private async void AboutButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        var dialog = new AboutDialog();
+        await dialog.ShowDialog(this);
+    }
+
+    private bool sidebarCollapsed;
+
+    private void SidebarToggle_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    {
+        sidebarCollapsed = !sidebarCollapsed;
+        RootGrid.ColumnDefinitions[0].Width = new GridLength(sidebarCollapsed ? 44 : 280);
+        SidebarContent.IsVisible = !sidebarCollapsed;
+        SidebarToggleButton.Content = sidebarCollapsed ? "▶" : "◀";
+        ToolTip.SetTip(SidebarToggleButton, sidebarCollapsed ? "Show sidebar" : "Hide sidebar");
+    }
 }
