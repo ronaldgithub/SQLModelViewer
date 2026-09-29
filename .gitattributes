@@ -1,0 +1,7 @@
+# Normalize all text files to LF in the repo; Windows checkouts (incl. CI runners with
+# core.autocrlf=true) were silently converting embedded-resource/source files to CRLF, which broke
+# a test that assumed LF-only line endings (see HtmlDiagramGeneratorTests). Pinning this avoids
+# platform-dependent behavior going forward instead of just patching around one symptom of it.
+* text=auto eol=lf
+
+*.sln text eol=crlf

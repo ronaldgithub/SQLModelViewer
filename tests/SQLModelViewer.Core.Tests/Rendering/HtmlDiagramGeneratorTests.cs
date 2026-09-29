@@ -42,7 +42,7 @@ public class HtmlDiagramGeneratorTests
         var vm = SmallModel();
         var html = new HtmlDiagramGenerator().GenerateFromViewModel(vm);
 
-        var match = System.Text.RegularExpressions.Regex.Match(html, @"\nDATA = (\{.*?\});\n", System.Text.RegularExpressions.RegexOptions.Singleline);
+        var match = System.Text.RegularExpressions.Regex.Match(html, @"\r?\nDATA = (\{.*?\});\r?\n", System.Text.RegularExpressions.RegexOptions.Singleline);
         match.Success.Should().BeTrue("the generated HTML should contain a 'DATA = {...};' assignment");
 
         var roundTripped = JsonSerializer.Deserialize<DiagramViewModel>(match.Groups[1].Value, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
