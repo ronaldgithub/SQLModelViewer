@@ -112,7 +112,16 @@ tests/
   preview or standalone in a real browser. Selecting a table also gives its direct FK neighbors a
   distinct highlight color (`.node.related`, `--related` CSS var) in addition to the existing
   dim-everything-else behavior, so "what connects to this table" is visible at a glance without
-  having to read the edge lines.
+  having to read the edge lines. That highlight color is user-selectable — six preset hues
+  (`RELATED_COLORS`) rendered as swatch buttons in the aside, reusing the same theme-adjusted
+  `--schema-s`/`--schema-l` custom properties the schema legend swatches use so a chosen color
+  stays readable in both light and dark without needing separate per-theme values; the choice
+  persists to `localStorage` per browser (not per diagram). Right-clicking a table opens a modal
+  (`#sqlModalBackdrop`) with a drafted `SELECT * FROM ... LEFT JOIN ...` covering that table and
+  its direct FK neighbors (`buildJoinSql`), meant as a copy-and-adjust starting point, not a
+  guaranteed-correct query — it skips self-referencing FKs and, if a neighbor is reachable via more
+  than one FK, only joins it once (first one found wins), so a manual look-over is still expected
+  for anything non-trivial.
 
 ## Data flow
 
