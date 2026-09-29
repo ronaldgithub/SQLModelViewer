@@ -25,9 +25,11 @@ src/
                             Server catalog-view queries → immutable Domain model), the auto-layout
                             algorithm, and HTML generation (embedded-resource template + JSON
                             payload substitution).
-  SQLModelViewer.App/       Avalonia desktop UI (connection dialog, schema-tree picker, embedded
+  SQLModelViewer.App/       Avalonia desktop UI (connection panel, schema-tree picker, embedded
                             WebView2 preview). Thin — it only gathers inputs, calls into Core, and
-                            displays/exports the result. (Not yet built — see "Status" below.)
+                            displays/exports the result. Targets net8.0-windows (not plain net8.0)
+                            since it's Windows-only by design and uses the Windows registry
+                            directly — see Conventions below.
   SQLModelViewer.Cli/       Headless test harness: `dotnet run --project src/SQLModelViewer.Cli --
                             --connection "..." --out diagram.html`. Exercises the exact same Core
                             pipeline the App will use, without needing Avalonia/WebView2 — this is
@@ -68,6 +70,20 @@ tests/
   the Domain model + layout positions into the `DiagramViewModel` DTOs that get JSON-serialized
   (camelCase) into the page; it also drops FKs that point outside the selected table set and turns
   them into `GapDto`s with `reason: "ExternalReference"` so they still surface as a note.
+- App/`Services/WebView2AvailabilityChecker.cs` — Avalonia's `Avalonia.Controls.WebView` (the
+  first-party AvaloniaUI package, not a third-party fork) doesn't expose a managed "is the WebView2
+  runtime installed" check, so this probes the registry directly (`SOFTWARE\Microsoft\EdgeUpdate\
+  Clients\{F3017226-...}`) the way Microsoft documents for native apps that don't want the full
+  WebView2 SDK as a dependency. `PreviewViewModel.ShowWebView` (= `IsWebViewAvailable && HasDiagram`)
+  gates the `NativeWebView` control's visibility — it must stay collapsed, not just empty, until
+  there's a diagram to show, because the native/hwnd-hosted control paints above ordinary Avalonia
+  content regardless of declared z-order even with no `Source` set, which otherwise blanks out both
+  the "no diagram yet" placeholder and the WebView2-unavailable fallback behind it.
+- App/`ViewModels/MainWindowViewModel.cs` — orchestrates `ConnectionViewModel` (server/auth/database
+  picker, recent-connections via `IConnectionProfileStore`), `SchemaTreeViewModel` (checkbox tree
+  over `ListTablesAsync`'s lightweight table listing, tri-state schema-level cascading), and
+  `PreviewViewModel`. `GenerateAsync` is the same Introspect → Layout → Generate pipeline the CLI
+  runs, just invoked from the UI thread with status updates instead of console output.
 
 ## Data flow
 
@@ -84,6 +100,7 @@ SqlConnection → SqlServerSchemaIntrospector → SchemaModel (Domain)
 ```
 dotnet build
 dotnet test
+dotnet run --project src/SQLModelViewer.App
 dotnet run --project src/SQLModelViewer.Cli -- --connection "Server=.;Database=Northwind;Trusted_Connection=True;TrustServerCertificate=True" --schemas dbo --row-counts --out diagram.html
 ```
 
@@ -117,33 +134,48 @@ own runtime `Microsoft.Data.SqlClient` connections and does not share credential
 
 `src/SQLModelViewer.Core/Rendering/Templates/diagram.template.html` — open it directly in a browser
 to iterate on CSS/JS without running the app or CLI; it renders a small built-in 3-table sample
-dataset (`SAMPLE_DATA`) when the injection point hasn't been substituted. When testing a real
-generated file's interactivity outside the (not-yet-built) Avalonia WebView2 preview, the fastest
-loop during this project's early development was: run the CLI against a real database, then either
-open the output in a real browser or drive it headlessly with `jsdom` (`npm install jsdom` in a
-scratch dir) to catch runtime errors without a GUI — this caught several real bugs (a missing
-`DATA =` assignment, `CSS.escape`/`scrollIntoView` calls that jsdom doesn't implement but real
-Chromium/WebView2 does) faster than eyeballing generated markup.
+dataset (`SAMPLE_DATA`) when the injection point hasn't been substituted. Before the Avalonia App
+existed, the fastest loop for testing a real generated file's interactivity was: run the CLI
+against a real database, then either open the output in a real browser or drive it headlessly with
+`jsdom` (`npm install jsdom` in a scratch dir) to catch runtime errors without a GUI — this caught
+several real bugs (a missing `DATA =` assignment, `CSS.escape`/`scrollIntoView` calls that jsdom
+doesn't implement but real Chromium/WebView2 does) faster than eyeballing generated markup. That
+approach is still useful for quick template iteration even now that the App's embedded preview
+exists.
 
 ## CI / release
 
 `.github/workflows/ci.yml` builds and tests on every push/PR. `.github/workflows/release.yml`
-publishes a self-contained win-x64 build on `v*.*.*` tags to GitHub Releases. See those files for
-the exact publish flags.
+publishes a self-contained win-x64 build on `v*.*.*` tags to GitHub Releases. **It currently only
+publishes the CLI**, not the App — the release predates the App's completion. Add an
+`SQLModelViewer.App` publish step (same `dotnet publish -r win-x64 --self-contained true
+-p:PublishSingleFile=true` pattern) before the next release if the App should ship too.
+
+Getting the release workflow green took two fix-forward tags after the first attempt (`v0.1.0`
+failed on a CRLF/LF-dependent test regex breaking under the Windows runner's checkout, `v0.1.1`
+then failed on missing `permissions: contents: write` for `GITHUB_TOKEN`) — `v0.1.2` is the first
+tag that actually produced a release. Both fixes are already in place; mentioned here so a future
+session doesn't have to rediscover them if a similar workflow change regresses one of them.
 
 ## Status (update this section as phases land)
 
-- **Done**: `SQLModelViewer.Core` (introspection, gap detection, layout, HTML generation) and
-  `SQLModelViewer.Cli`, validated end-to-end against real SQL Server databases (including the
-  `topdesk` database the original example was hand-built from — the auto `GapDetector` independently
-  rediscovered the same two self-referencing-FK notes the human author had written by hand).
-- **Not yet built**: `SQLModelViewer.App` (the Avalonia GUI — connection dialog, schema-tree picker,
-  embedded WebView2 preview). Until it exists, the CLI is the only way to generate a diagram.
+- **Done**: `SQLModelViewer.Core` (introspection, gap detection, layout, HTML generation),
+  `SQLModelViewer.Cli`, and `SQLModelViewer.App` (Avalonia desktop GUI — connection panel,
+  schema-tree picker, embedded WebView2 preview, Save As/Open in Browser). All validated end-to-end
+  against real SQL Server databases (including the `topdesk` database the original example was
+  hand-built from — the auto `GapDetector` independently rediscovered the same two
+  self-referencing-FK notes the human author had written by hand — and against `ContosoOrders`,
+  which exercised the App's full connect → pick tables → generate → embedded-preview → drag →
+  Open in Browser → Save As loop with a real, unconstrained FK-shaped column the `GapDetector`
+  correctly flagged).
+- The App is not yet part of the release workflow (see CI/release above) — only the CLI ships in
+  GitHub Releases today.
 
 ## Explicit non-goals
 
 - No multi-database-vendor support (SQL Server only — no provider abstraction layer).
-- No Linux/macOS build target (Windows-only release, matches the `Avalonia.WebView2` dependency).
+- No Linux/macOS build target (Windows-only release; the App targets `net8.0-windows` and uses the
+  Windows registry and WebView2 directly).
 - No write-back of descriptions/model changes to the database — introspection is read-only by
   design; this was an explicit scope decision (bigger trust/permissions surface), not an oversight.
 - No general NLP-style FK-name inference in `GapDetector` beyond simple English pluralization — see
