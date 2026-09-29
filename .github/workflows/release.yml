@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore SQLModelViewer.sln
+
+      - name: Test
+        run: dotnet test SQLModelViewer.sln -c Release --no-restore
+
+      # SQLModelViewer.App (the Avalonia GUI) isn't built yet — this publishes the CLI, which is
+      # the only shippable artifact today. Add an App publish step here once it exists.
+      - name: Publish CLI
+        run: >
+          dotnet publish src/SQLModelViewer.Cli/SQLModelViewer.Cli.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish/win-x64
+
+      - name: Zip
+        shell: pwsh
+        run: Compress-Archive -Path publish/win-x64/* -DestinationPath SQLModelViewer-${{ github.ref_name }}-win-x64.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: SQLModelViewer-${{ github.ref_name }}-win-x64.zip
+          generate_release_notes: true

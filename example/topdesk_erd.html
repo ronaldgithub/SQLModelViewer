@@ -1,0 +1,463 @@
+<title>TOPdesk Datamodel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --ink:#18212C; --muted:#5B6778; --line:#D3D9E2; --grid:#CBD2DC;
+  --edge:#8995A5; --edge-hi:#18212C; --sel:#18212C; --chip:#E6EAF0;
+  --d-org:#3F72AF; --d-inc:#1C8574; --d-chg:#AF7317; --d-lk:#687384; --d-om:#875797;
+  --warn:#9A5B00;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
+    --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
+    --d-org:#6F9DD8; --d-inc:#3EB5A1; --d-chg:#D9A441; --d-lk:#8E99AA; --d-om:#B489C7;
+    --warn:#E0A451;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
+  --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
+  --d-org:#6F9DD8; --d-inc:#3EB5A1; --d-chg:#D9A441; --d-lk:#8E99AA; --d-om:#B489C7;
+  --warn:#E0A451;
+}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr 320px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;min-width:0}
+h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
+button,input{font:inherit;color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,input:focus-visible,.link:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+input[type=search]{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px;width:200px;font-family:var(--mono);font-size:13px}
+.stage{position:relative;overflow:hidden;min-height:0}
+svg#erd{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none}
+svg#erd.panning{cursor:grabbing}
+.hint{position:absolute;left:16px;bottom:12px;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 9px;pointer-events:none}
+aside{background:var(--surface);border-left:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:20px;min-height:0}
+aside h2{margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.legend{display:flex;flex-direction:column;gap:4px}
+.legend label{display:flex;align-items:center;gap:10px;cursor:pointer;padding:3px 0}
+.legend input{accent-color:var(--ink);margin:0}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+.legend .n{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.detail-name{font-family:var(--mono);font-size:17px;font-weight:500;word-break:break-all;margin:0}
+.gloss{color:var(--muted);margin:2px 0 8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--chip);border-radius:99px;padding:2px 10px}
+ul.keys{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+ul.keys li{display:grid;grid-template-columns:28px 1fr;gap:6px;align-items:baseline;font-family:var(--mono);font-size:13px;padding:3px 0;border-bottom:1px solid var(--line)}
+ul.keys li:last-child{border-bottom:0}
+.tag{font-size:10px;font-weight:500;color:var(--muted)}
+.tag.pk{color:var(--warn)}
+.arrow{color:var(--muted)}
+.link{background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;font-family:var(--mono);font-size:13px}
+.link:hover{text-decoration-color:var(--ink)}
+.back{font-family:var(--sans);font-size:13px;color:var(--muted);margin-bottom:10px}
+p.intro{margin:0;color:var(--muted)}
+ul.gaps{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:13px}
+ul.gaps code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.empty{color:var(--muted);font-size:13px}
+
+/* SVG */
+#erd text{font-family:var(--sans)}
+.card{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.node{cursor:pointer}
+.node:focus{outline:none}
+.node:focus-visible .card,.node.sel .card{stroke:var(--sel);stroke-width:2}
+.tname{font-size:13.5px;font-weight:600;fill:var(--ink)}
+.col{font-family:var(--mono)!important;font-size:12px;fill:var(--ink)}
+.ktag{font-family:var(--mono)!important;font-size:9.5px;font-weight:500;fill:var(--muted)}
+.ktag.pk{fill:var(--warn)}
+.sep{stroke:var(--line)}
+.edge{fill:none;stroke:var(--edge);stroke-width:1.2}
+.edge.hi{stroke:var(--edge-hi);stroke-width:2}
+.dim{opacity:.16}
+.edge.dim{opacity:.07}
+.mk{fill:none;stroke:var(--edge);stroke-width:1.3}
+.mk.hi{stroke:var(--edge-hi);stroke-width:1.6}
+.gridDot{fill:var(--grid)}
+
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 62vh auto;height:auto}
+  aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .tools{margin-left:0}
+  input[type=search]{width:160px}
+}
+@media (prefers-reduced-motion:no-preference){ .node,.edge{transition:opacity .15s} }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>TOPdesk Datamodel</h1>
+      <span class="meta">WIN10 · database topdesk · schema topdesk · <span id="stat"></span></span>
+    </div>
+    <div class="tools">
+      <input type="search" id="q" list="tlist" placeholder="Find table…" aria-label="Find table">
+      <datalist id="tlist"></datalist>
+      <button class="btn" id="zoomOut" aria-label="Zoom out">−</button>
+      <button class="btn" id="zoomIn" aria-label="Zoom in">+</button>
+      <button class="btn" id="fit">Fit</button>
+      <button class="btn" id="reset">Reset layout</button>
+    </div>
+  </header>
+  <div class="stage">
+    <svg id="erd" aria-label="Entity relationship diagram">
+      <defs>
+        <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle class="gridDot" cx="1" cy="1" r="1"></circle>
+        </pattern>
+        <marker id="many" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="mk" d="M3 6 L14 1 M3 6 L14 6 M3 6 L14 11 M1 1 L1 11"></path>
+        </marker>
+        <marker id="manyHi" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="mk hi" d="M3 6 L14 1 M3 6 L14 6 M3 6 L14 11 M1 1 L1 11"></path>
+        </marker>
+        <marker id="one" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+          <path class="mk" d="M8 1 L8 11"></path>
+        </marker>
+        <marker id="oneHi" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+          <path class="mk hi" d="M8 1 L8 11"></path>
+        </marker>
+      </defs>
+      <rect id="bg" width="100%" height="100%" fill="url(#dots)"></rect>
+      <g id="world"><g id="edges"></g><g id="nodes"></g></g>
+    </svg>
+    <div class="hint">Drag tables · drag background to pan · scroll to zoom · click a table for details</div>
+  </div>
+  <aside id="panel"></aside>
+</div>
+
+<script>
+const DOMAINS = {
+  org:{label:"Persons & organisation", v:"--d-org"},
+  inc:{label:"Incident & problem",     v:"--d-inc"},
+  chg:{label:"Change",                 v:"--d-chg"},
+  lk: {label:"Lookups",                v:"--d-lk"},
+  om: {label:"Operations & projects",  v:"--d-om"}
+};
+// name, domain, x, y, English gloss
+const TABLES = [
+  ["vestiging","org",40,40,"Branch"],
+  ["afdeling","org",40,130,"Department"],
+  ["land","org",40,220,"Country"],
+  ["budgethouder","org",40,310,"Budget holder"],
+  ["archiefreden","lk",40,880,"Archive reason"],
+  ["persoon","org",330,40,"Person (caller)"],
+  ["actiedoor","org",330,250,"Operator"],
+  ["gebruiker","org",330,470,"User account"],
+  ["incident__memogeschiedenis","inc",330,570,"Incident memo history"],
+  ["actiedoor__memo_history","org",330,710,"Operator memo history"],
+  ["incident","inc",640,40,"Incident (call)"],
+  ["probleemincidentlink","inc",640,380,"Problem ↔ incident link"],
+  ["probleem","inc",640,520,"Problem"],
+  ["oplossingen","inc",640,750,"Solutions"],
+  ["change_incident_link","chg",950,40,"Change ↔ incident link"],
+  ["change_inc_causedby_link","chg",950,180,"Change ↔ incident (caused by)"],
+  ["change","chg",950,320,"Change"],
+  ["changeactivity","chg",950,550,"Change activity"],
+  ["change_branch_link","chg",950,670,"Change ↔ branch link"],
+  ["change_template","chg",950,790,"Change template"],
+  ["object","chg",950,930,"Object (asset)"],
+  ["impact","lk",1260,40,"Impact"],
+  ["priority","lk",1260,130,"Priority"],
+  ["urgency","lk",1260,220,"Urgency"],
+  ["afhandelingstatus","lk",1260,310,"Processing status"],
+  ["soortbinnenkomst","lk",1260,400,"Entry type"],
+  ["extraa","lk",1260,490,"Free field A (option list)"],
+  ["om_reeks","om",40,1040,"OM series"],
+  ["om_groepering","om",330,1040,"OM grouping"],
+  ["om_schema","om",640,1040,"OM schedule"],
+  ["om_activiteit","om",950,1040,"OM activity"],
+  ["profacboom_project","om",1260,1040,"Project"]
+];
+// child, column, parent  (all reference parent.unid) — read from sys.foreign_keys
+const FKS = `actiedoor__memo_history gebruikerid gebruiker
+actiedoor__memo_history persoonid persoon
+actiedoor afdelingid afdeling
+actiedoor archiefredenid archiefreden
+actiedoor budgethouderid budgethouder
+actiedoor landid land
+actiedoor vestigingid vestiging
+change_branch_link changeid change
+change_inc_causedby_link changeid change
+change_inc_causedby_link incidentid incident
+change_incident_link changeid change
+change_incident_link incidentid incident
+change_template impactid impact
+change_template priorityid priority
+change extraaid extraa
+change impactid impact
+change incidentid incident
+change objectid object
+change persoonid persoon
+change priorityid priority
+changeactivity changeid change
+incident__memogeschiedenis gebruikerid gebruiker
+incident__memogeschiedenis persoonid persoon
+incident actiedoorid actiedoor
+incident afhandelingstatusid afhandelingstatus
+incident archiefredenid archiefreden
+incident extraaid extraa
+incident impactid impact
+incident incidentid incident
+incident persoonid persoon
+incident priorityid priority
+incident soortbinnenkomstid soortbinnenkomst
+incident urgencyid urgency
+incident vestigingid vestiging
+om_activiteit archiefredenid archiefreden
+om_activiteit budgethouderid budgethouder
+om_groepering archiefredenid archiefreden
+om_reeks archiefredenid archiefreden
+om_schema archiefredenid archiefreden
+oplossingen afhandelingstatusid afhandelingstatus
+oplossingen impactid impact
+oplossingen priorityid priority
+oplossingen probleemid probleem
+oplossingen soortbinnenkomstid soortbinnenkomst
+oplossingen urgencyid urgency
+persoon afdelingid afdeling
+persoon archiefredenid archiefreden
+persoon budgethouderid budgethouder
+persoon landid land
+persoon vestigingid vestiging
+probleem actiedoorid actiedoor
+probleem archiefredenid archiefreden
+probleem impactid impact
+probleem priorityid priority
+probleem probleemid probleem
+probleem urgencyid urgency
+probleemincidentlink incidentid incident
+probleemincidentlink probleemid probleem
+profacboom_project archiefredenid archiefreden`.split("\n").map(l => { const [c,col,p] = l.trim().split(/\s+/); return {c,col,p}; });
+
+const GAPS = [
+  "<code>change_branch_link</code>: the branch column was not found (probably → <code>vestiging</code>).",
+  "<code>incident__memogeschiedenis</code>: the link to <code>incident</code> was not found.",
+  "<code>actiedoor__memo_history</code>: the link to <code>actiedoor</code> was not found.",
+  "Role-named keys such as <code>operatorid</code> → <code>actiedoor</code> were not scanned.",
+  "<code>incident.incidentid</code> and <code>probleem.probleemid</code> are modelled as self-references (main incident / main problem). Verify in TOPdesk."
+];
+
+const W = 230, HEAD = 34, ROW = 22;
+const NS = "http://www.w3.org/2000/svg";
+const T = {};
+TABLES.forEach(([name,d,x,y,gloss]) => T[name] = {name,d,x,y,x0:x,y0:y,gloss,cols:["unid"]});
+FKS.forEach(f => T[f.c].cols.push(f.col));
+const hgt = t => HEAD + t.cols.length*ROW + 6;
+const rowY = (t,col) => t.y + HEAD + t.cols.indexOf(col)*ROW + ROW/2 + 2;
+
+const POSKEY = "topdesk-erd-pos-v1";
+try { const s = JSON.parse(localStorage.getItem(POSKEY) || "{}"); for (const k in s) if (T[k]) { T[k].x = s[k][0]; T[k].y = s[k][1]; } } catch(e){}
+function savePos(){ try { const o={}; for (const k in T) o[k]=[T[k].x,T[k].y]; localStorage.setItem(POSKEY, JSON.stringify(o)); } catch(e){} }
+
+const hidden = new Set();
+let selected = null;
+const view = {x:0,y:0,k:1};
+const svg = document.getElementById("erd"), world = document.getElementById("world");
+const gNodes = document.getElementById("nodes"), gEdges = document.getElementById("edges");
+const el = (tag, attrs={}, parent) => { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; };
+const color = d => `var(${DOMAINS[d].v})`;
+
+document.getElementById("stat").textContent = `${TABLES.length} tables · ${FKS.length} foreign keys`;
+document.getElementById("tlist").innerHTML = TABLES.map(t => `<option value="${t[0]}">`).join("");
+
+// nodes
+for (const name in T) {
+  const t = T[name], H = hgt(t);
+  const g = el("g", {class:"node", tabindex:"0", role:"button", "aria-label":`${name}, ${t.gloss}`}, gNodes);
+  g.dataset.name = name;
+  el("rect", {class:"card", width:W, height:H, rx:6}, g);
+  el("path", {d:`M0,6 a6,6 0 0 1 6,-6 h${W-12} a6,6 0 0 1 6,6 v${HEAD-6} h${-W} z`, fill:color(t.d), "fill-opacity":".13"}, g);
+  el("rect", {x:0, y:0, width:W, height:3, fill:color(t.d)}, g).setAttribute("rx", 1.5);
+  el("line", {class:"sep", x1:0, x2:W, y1:HEAD, y2:HEAD}, g);
+  el("text", {class:"tname", x:12, y:22}, g).textContent = name;
+  t.cols.forEach((c,i) => {
+    const y = HEAD + i*ROW + ROW/2 + 6;
+    const pk = c === "unid";
+    el("text", {class:"ktag"+(pk?" pk":""), x:12, y}, g).textContent = pk ? "PK" : "FK";
+    el("text", {class:"col", x:36, y}, g).textContent = c;
+  });
+  el("title", {}, g).textContent = `${name} — ${t.gloss}`;
+  t.g = g;
+}
+// edges
+FKS.forEach(f => {
+  f.el = el("path", {class:"edge", "marker-start":"url(#many)", "marker-end":"url(#one)"}, gEdges);
+  el("title", {}, f.el).textContent = `${f.c}.${f.col} → ${f.p}.unid`;
+});
+
+function edgeD(f){
+  const c = T[f.c], p = T[f.p];
+  const y1 = rowY(c, f.col), y2 = rowY(p, "unid");
+  const cL = c.x, cR = c.x+W, pL = p.x, pR = p.x+W;
+  if (pL >= cR + 24) { const k = Math.max(40,(pL-cR)/2); return `M${cR},${y1} C${cR+k},${y1} ${pL-k},${y2} ${pL},${y2}`; }
+  if (pR <= cL - 24) { const k = Math.max(40,(cL-pR)/2); return `M${cL},${y1} C${cL-k},${y1} ${pR+k},${y2} ${pR},${y2}`; }
+  const b = Math.max(cR,pR) + 34 + Math.min(70, Math.abs(y2-y1)*0.12);
+  return `M${cR},${y1} C${b},${y1} ${b},${y2} ${pR},${y2}`;
+}
+function layout(){
+  for (const n in T) T[n].g.setAttribute("transform", `translate(${T[n].x},${T[n].y})`);
+  FKS.forEach(f => f.el.setAttribute("d", edgeD(f)));
+}
+function applyView(){
+  world.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+  document.getElementById("dots").setAttribute("patternTransform", `translate(${view.x},${view.y}) scale(${view.k})`);
+}
+function paint(){
+  const nb = new Set();
+  if (selected) { nb.add(selected); FKS.forEach(f => { if (f.c===selected) nb.add(f.p); if (f.p===selected) nb.add(f.c); }); }
+  for (const n in T) {
+    const t = T[n];
+    t.g.style.display = hidden.has(t.d) ? "none" : "";
+    t.g.classList.toggle("sel", n === selected);
+    t.g.classList.toggle("dim", !!selected && !nb.has(n));
+  }
+  FKS.forEach(f => {
+    const vis = !hidden.has(T[f.c].d) && !hidden.has(T[f.p].d);
+    f.el.style.display = vis ? "" : "none";
+    const hi = !!selected && (f.c===selected || f.p===selected);
+    f.el.classList.toggle("hi", hi);
+    f.el.classList.toggle("dim", !!selected && !hi);
+    f.el.setAttribute("marker-start", hi ? "url(#manyHi)" : "url(#many)");
+    f.el.setAttribute("marker-end", hi ? "url(#oneHi)" : "url(#one)");
+    if (hi) gEdges.appendChild(f.el);
+  });
+  renderPanel();
+}
+
+// panel
+const panel = document.getElementById("panel");
+function renderPanel(){
+  const counts = {}; for (const n in T) counts[T[n].d] = (counts[T[n].d]||0)+1;
+  const legend = `<section><h2>Domains</h2><div class="legend">${Object.entries(DOMAINS).map(([k,d]) =>
+    `<label><input type="checkbox" id="dom-${k}" data-dom="${k}" ${hidden.has(k)?"":"checked"}><span class="sw" style="background:${color(k)}"></span>${d.label}<span class="n">${counts[k]}</span></label>`).join("")}</div></section>`;
+  let body;
+  if (!selected) {
+    body = `<section><h2>Overview</h2><p class="intro">Every table has primary key <code>unid</code>. Each foreign key points at the <code>unid</code> of its parent. The crow's foot sits on the child side.</p></section>
+    <section><h2>Open items</h2><ul class="gaps">${GAPS.map(g=>`<li>${g}</li>`).join("")}</ul></section>`;
+  } else {
+    const t = T[selected];
+    const out = FKS.filter(f => f.c === selected);
+    const inc = FKS.filter(f => f.p === selected);
+    body = `<section>
+      <button class="link back" data-go="">← All tables</button>
+      <p class="detail-name">${t.name}</p>
+      <p class="gloss">${t.gloss}</p>
+      <span class="chip"><span class="sw" style="background:${color(t.d)}"></span>${DOMAINS[t.d].label}</span>
+    </section>
+    <section><h2>Columns (${t.cols.length})</h2><ul class="keys">
+      <li><span class="tag pk">PK</span><span>unid</span></li>
+      ${out.map(f => `<li><span class="tag">FK</span><span>${f.col} <span class="arrow">→</span> <button class="link" data-go="${f.p}">${f.p}</button></span></li>`).join("")}
+    </ul></section>
+    <section><h2>Referenced by (${inc.length})</h2>${inc.length ? `<ul class="keys">${inc.map(f =>
+      `<li><span class="tag">FK</span><span><button class="link" data-go="${f.c}">${f.c}</button>.${f.col}</span></li>`).join("")}</ul>` : `<p class="empty">No table references ${t.name}.</p>`}</section>`;
+  }
+  panel.innerHTML = legend + body;
+}
+panel.addEventListener("change", e => {
+  const d = e.target.dataset.dom; if (!d) return;
+  e.target.checked ? hidden.delete(d) : hidden.add(d);
+  if (selected && hidden.has(T[selected].d)) selected = null;
+  paint();
+});
+panel.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  select(b.dataset.go || null, !!b.dataset.go);
+});
+
+function select(name, center){
+  selected = name;
+  if (name && hidden.has(T[name].d)) hidden.delete(T[name].d);
+  paint();
+  if (name && center) centerOn(name);
+}
+function centerOn(name){
+  const t = T[name], r = svg.getBoundingClientRect();
+  view.x = r.width/2 - (t.x + W/2)*view.k;
+  view.y = r.height/2 - (t.y + hgt(t)/2)*view.k;
+  applyView();
+}
+function fit(){
+  const vis = Object.values(T).filter(t => !hidden.has(t.d)); if (!vis.length) return;
+  const x0 = Math.min(...vis.map(t=>t.x)), y0 = Math.min(...vis.map(t=>t.y));
+  const x1 = Math.max(...vis.map(t=>t.x+W)) + 60, y1 = Math.max(...vis.map(t=>t.y+hgt(t)));
+  const r = svg.getBoundingClientRect(), pad = 24;
+  view.k = Math.min((r.width-2*pad)/(x1-x0), (r.height-2*pad)/(y1-y0), 1.25);
+  view.x = (r.width - (x1-x0)*view.k)/2 - x0*view.k;
+  view.y = (r.height - (y1-y0)*view.k)/2 - y0*view.k;
+  applyView();
+}
+function zoomAt(px, py, factor){
+  const k2 = Math.min(2.5, Math.max(0.2, view.k*factor));
+  view.x = px - (px - view.x)*(k2/view.k);
+  view.y = py - (py - view.y)*(k2/view.k);
+  view.k = k2; applyView();
+}
+
+// pointer: drag node, pan background, click select
+let drag = null;
+svg.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  const g = e.target.closest(".node");
+  const t = g ? T[g.dataset.name] : null;
+  drag = {sx:e.clientX, sy:e.clientY, t, ox: t ? t.x : view.x, oy: t ? t.y : view.y, moved:false};
+  svg.setPointerCapture(e.pointerId);
+  if (!t) svg.classList.add("panning");
+});
+svg.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx,dy) < 4) return;
+  drag.moved = true;
+  if (drag.t) { drag.t.x = Math.round((drag.ox + dx/view.k)/10)*10; drag.t.y = Math.round((drag.oy + dy/view.k)/10)*10; layout(); }
+  else { view.x = drag.ox + dx; view.y = drag.oy + dy; applyView(); }
+});
+svg.addEventListener("pointerup", () => {
+  if (!drag) return;
+  svg.classList.remove("panning");
+  if (!drag.moved) select(drag.t ? (selected === drag.t.name ? null : drag.t.name) : null, false);
+  else if (drag.t) savePos();
+  drag = null;
+});
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = svg.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY*0.0015));
+}, {passive:false});
+gNodes.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.dataset.name) { e.preventDefault(); select(e.target.dataset.name, true); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") select(null); });
+
+document.getElementById("fit").onclick = fit;
+document.getElementById("zoomIn").onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.2); };
+document.getElementById("zoomOut").onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.2); };
+document.getElementById("reset").onclick = () => {
+  for (const n in T) { T[n].x = T[n].x0; T[n].y = T[n].y0; }
+  try { localStorage.removeItem(POSKEY); } catch(e){}
+  layout(); fit();
+};
+const q = document.getElementById("q");
+function findTable(){
+  const v = q.value.trim().toLowerCase(); if (!v) return;
+  const hit = T[v] ? v : Object.keys(T).find(n => n.startsWith(v)) || Object.keys(T).find(n => n.includes(v));
+  if (hit) select(hit, true);
+}
+q.addEventListener("change", findTable);
+q.addEventListener("keydown", e => { if (e.key === "Enter") findTable(); });
+
+layout(); paint();
+requestAnimationFrame(fit);
+window.addEventListener("resize", () => { if (!drag) fit(); });
+</script>

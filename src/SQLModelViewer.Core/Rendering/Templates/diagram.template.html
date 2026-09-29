@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQLModelViewer — Datamodel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#EEF1F5; --surface:#FFFFFF; --ink:#18212C; --muted:#5B6778; --line:#D3D9E2; --grid:#CBD2DC;
+  --edge:#8995A5; --edge-hi:#18212C; --sel:#18212C; --chip:#E6EAF0;
+  --warn:#9A5B00; --err:#B3261E;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --schema-l:55%; --schema-s:52%;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
+    --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
+    --warn:#E0A451; --err:#E5867D;
+    --schema-l:66%; --schema-s:48%;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#11151B; --surface:#1A2029; --ink:#E4E9F0; --muted:#95A1B2; --line:#2B3340; --grid:#262E3A;
+  --edge:#5E6B7D; --edge-hi:#E4E9F0; --sel:#E4E9F0; --chip:#242C37;
+  --warn:#E0A451; --err:#E5867D;
+  --schema-l:66%; --schema-s:48%;
+}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
+.app{height:100%;display:grid;grid-template-rows:auto 1fr;grid-template-columns:1fr 340px}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;min-width:0}
+h1{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
+button,input,select{font:inherit;color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 11px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:var(--muted)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,.link:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+input[type=search]{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:5px 10px;width:220px;font-family:var(--mono);font-size:13px}
+select.btn{padding:5px 8px}
+.stage{position:relative;overflow:hidden;min-height:0}
+svg#erd{display:block;width:100%;height:100%;touch-action:none;cursor:grab;user-select:none}
+svg#erd.panning{cursor:grabbing}
+.hint{position:absolute;left:16px;bottom:12px;font-size:12px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 9px;pointer-events:none}
+aside{background:var(--surface);border-left:1px solid var(--line);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:20px;min-height:0}
+aside h2{margin:0 0 8px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.legend{display:flex;flex-direction:column;gap:4px}
+.legend label{display:flex;align-items:center;gap:10px;cursor:pointer;padding:3px 0}
+.legend input{accent-color:var(--ink);margin:0}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+.legend .n{margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.detail-name{font-family:var(--mono);font-size:17px;font-weight:500;word-break:break-all;margin:0}
+.gloss{color:var(--muted);margin:2px 0 8px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--chip);border-radius:99px;padding:2px 10px}
+.rowcount{font-family:var(--mono);font-size:12px;color:var(--muted)}
+ul.keys{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+ul.keys li{display:grid;grid-template-columns:34px 1fr;gap:6px;align-items:baseline;font-family:var(--mono);font-size:13px;padding:4px 0;border-bottom:1px solid var(--line)}
+ul.keys li:last-child{border-bottom:0}
+.tag{font-size:10px;font-weight:500;color:var(--muted)}
+.tag.pk{color:var(--warn)}
+.typelabel{color:var(--muted);font-size:11.5px}
+.idbadge{font-family:var(--sans);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:var(--chip);border-radius:4px;padding:1px 4px;margin-left:4px}
+.coldesc{display:block;font-family:var(--sans);font-size:12px;color:var(--muted);white-space:normal}
+.arrow{color:var(--muted)}
+.link{background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px;font-family:var(--mono);font-size:13px}
+.link:hover{text-decoration-color:var(--ink)}
+.back{font-family:var(--sans);font-size:13px;color:var(--muted);margin-bottom:10px}
+p.intro{margin:0;color:var(--muted)}
+ul.gaps{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:13px}
+ul.gaps li{border-left:2px solid var(--line);padding-left:8px}
+ul.gaps li.warn{border-left-color:var(--warn)}
+ul.gaps li.ext{border-left-color:var(--muted)}
+ul.gaps code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.empty{color:var(--muted);font-size:13px}
+
+/* SVG */
+#erd text{font-family:var(--sans)}
+.card{fill:var(--surface);stroke:var(--line);stroke-width:1}
+.node{cursor:pointer}
+.node:focus{outline:none}
+.node:focus-visible .card,.node.sel .card{stroke:var(--sel);stroke-width:2}
+.tname{font-size:13.5px;font-weight:600;fill:var(--ink)}
+.trowcount{font-family:var(--mono)!important;font-size:10px;fill:var(--muted)}
+.col{font-family:var(--mono)!important;font-size:12px;fill:var(--ink)}
+.coltype{font-family:var(--mono)!important;font-size:10px;fill:var(--muted)}
+.ktag{font-family:var(--mono)!important;font-size:9.5px;font-weight:500;fill:var(--muted)}
+.ktag.pk{fill:var(--warn)}
+.iddot{fill:var(--muted)}
+.sep{stroke:var(--line)}
+.edge{fill:none;stroke:var(--edge);stroke-width:1.2}
+.edge.hi{stroke:var(--edge-hi);stroke-width:2}
+.dim{opacity:.16}
+.edge.dim{opacity:.07}
+.mk{fill:none;stroke:var(--edge);stroke-width:1.3}
+.mk.hi{stroke:var(--edge-hi);stroke-width:1.6}
+.gridDot{fill:var(--grid)}
+.col-hit{fill:var(--warn)!important;font-weight:600}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 62vh auto;height:auto}
+  aside{border-left:0;border-top:1px solid var(--line);overflow:visible}
+  .tools{margin-left:0}
+  input[type=search]{width:160px}
+}
+@media (prefers-reduced-motion:no-preference){ .node,.edge{transition:opacity .15s} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>SQLModelViewer</h1>
+      <span class="meta" id="metaLine"></span>
+    </div>
+    <div class="tools">
+      <input type="search" id="q" list="tlist" placeholder="Find table or table.column…" aria-label="Find table or column">
+      <datalist id="tlist"></datalist>
+      <label class="btn" style="display:flex;align-items:center;gap:6px;cursor:pointer">
+        Isolate
+        <select id="isolate" aria-label="Isolate: show N hops from selected table">
+          <option value="0">off</option>
+          <option value="1">1 hop</option>
+          <option value="2">2 hops</option>
+          <option value="3">3 hops</option>
+        </select>
+      </label>
+      <button class="btn" id="zoomOut" aria-label="Zoom out">−</button>
+      <button class="btn" id="zoomIn" aria-label="Zoom in">+</button>
+      <button class="btn" id="fit">Fit</button>
+      <button class="btn" id="reset">Reset layout</button>
+    </div>
+  </header>
+  <div class="stage">
+    <svg id="erd" aria-label="Entity relationship diagram">
+      <defs>
+        <pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse">
+          <circle class="gridDot" cx="1" cy="1" r="1"></circle>
+        </pattern>
+        <marker id="many" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="mk" d="M3 6 L14 1 M3 6 L14 6 M3 6 L14 11 M1 1 L1 11"></path>
+        </marker>
+        <marker id="manyHi" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto-start-reverse">
+          <path class="mk hi" d="M3 6 L14 1 M3 6 L14 6 M3 6 L14 11 M1 1 L1 11"></path>
+        </marker>
+        <marker id="one" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+          <path class="mk" d="M8 1 L8 11"></path>
+        </marker>
+        <marker id="oneHi" viewBox="0 0 14 12" refX="14" refY="6" markerWidth="14" markerHeight="12" markerUnits="userSpaceOnUse" orient="auto">
+          <path class="mk hi" d="M8 1 L8 11"></path>
+        </marker>
+      </defs>
+      <rect id="bg" width="100%" height="100%" fill="url(#dots)"></rect>
+      <g id="world"><g id="edges"></g><g id="nodes"></g></g>
+    </svg>
+    <div class="hint">Drag tables · drag background to pan · scroll to zoom · click a table for details</div>
+  </div>
+  <aside id="panel"></aside>
+</div>
+
+<script>
+// Dev fallback so this template can be opened directly in a browser (no app/generator involved).
+const SAMPLE_DATA = {
+  serverName: "(sample)", databaseName: "sample", generatedAtUtc: new Date().toISOString(),
+  schemas: [{key:"dbo",label:"dbo",hue:210,tableCount:3}],
+  tables: [
+    {key:"dbo.Customer",schema:"dbo",name:"Customer",x:40,y:40,description:"A customer account.",rowCount:1200,
+      columns:[{name:"CustomerId",typeLabel:"int",nullable:false,isIdentity:true,isPk:true,isFk:false,description:null},
+               {name:"Name",typeLabel:"nvarchar(100)",nullable:false,isIdentity:false,isPk:false,isFk:false,description:null}]},
+    {key:"dbo.Order",schema:"dbo",name:"Order",x:390,y:40,description:"An order placed by a customer.",rowCount:5400,
+      columns:[{name:"OrderId",typeLabel:"int",nullable:false,isIdentity:true,isPk:true,isFk:false,description:null},
+               {name:"CustomerId",typeLabel:"int",nullable:false,isIdentity:false,isPk:false,isFk:true,description:null},
+               {name:"OrderDate",typeLabel:"datetime2(3)",nullable:false,isIdentity:false,isPk:false,isFk:false,description:null}]},
+    {key:"dbo.OrderItem",schema:"dbo",name:"OrderItem",x:740,y:40,description:null,rowCount:18300,
+      columns:[{name:"OrderItemId",typeLabel:"int",nullable:false,isIdentity:true,isPk:true,isFk:false,description:null},
+               {name:"OrderId",typeLabel:"int",nullable:false,isIdentity:false,isPk:false,isFk:true,description:null},
+               {name:"Quantity",typeLabel:"int",nullable:false,isIdentity:false,isPk:false,isFk:false,description:null}]}
+  ],
+  foreignKeys: [
+    {constraintName:"FK_Order_Customer",child:"dbo.Order",parent:"dbo.Customer",columns:[{childColumn:"CustomerId",parentColumn:"CustomerId"}],isSelfReferencing:false,isBackEdge:false},
+    {constraintName:"FK_OrderItem_Order",child:"dbo.OrderItem",parent:"dbo.Order",columns:[{childColumn:"OrderId",parentColumn:"OrderId"}],isSelfReferencing:false,isBackEdge:false}
+  ],
+  gaps: []
+};
+let DATA = SAMPLE_DATA;
+/*__DIAGRAM_DATA__*/
+
+const W = 260, HEAD = 34, ROW = 22;
+const NS = "http://www.w3.org/2000/svg";
+const T = {};
+DATA.tables.forEach(t => T[t.key] = { ...t, x0: t.x, y0: t.y });
+const FKS = DATA.foreignKeys.map((f, i) => ({ ...f, idx: i }));
+const SCHEMAS = DATA.schemas;
+const schemaByKey = Object.fromEntries(SCHEMAS.map(s => [s.key, s]));
+
+const hgt = t => HEAD + t.columns.length * ROW + 6;
+const rowY = (t, colName) => {
+  const i = t.columns.findIndex(c => c.name === colName);
+  return t.y + HEAD + Math.max(0, i) * ROW + ROW / 2 + 2;
+};
+const colorOf = s => `hsl(${schemaByKey[s]?.hue ?? 0} var(--schema-s) var(--schema-l))`;
+
+const POSKEY = `sqlmodelviewer-pos-${DATA.databaseName}-v1`;
+try { const s = JSON.parse(localStorage.getItem(POSKEY) || "{}"); for (const k in s) if (T[k]) { T[k].x = s[k][0]; T[k].y = s[k][1]; } } catch(e){}
+function savePos(){ try { const o={}; for (const k in T) o[k]=[T[k].x,T[k].y]; localStorage.setItem(POSKEY, JSON.stringify(o)); } catch(e){} }
+
+const hiddenSchemas = new Set();
+let selected = null;
+let isolateHops = 0;
+const view = {x:0,y:0,k:1};
+const svg = document.getElementById("erd"), world = document.getElementById("world");
+const gNodes = document.getElementById("nodes"), gEdges = document.getElementById("edges");
+const el = (tag, attrs={}, parent) => { const e = document.createElementNS(NS, tag); for (const a in attrs) e.setAttribute(a, attrs[a]); if (parent) parent.appendChild(e); return e; };
+
+document.getElementById("metaLine").textContent =
+  `${DATA.serverName} · database ${DATA.databaseName} · ${DATA.tables.length} tables · ${FKS.length} foreign keys`;
+
+function rebuildDatalist(){
+  const opts = [];
+  for (const k in T) {
+    opts.push(`<option value="${T[k].key}">${T[k].schema}.${T[k].name}</option>`);
+    T[k].columns.forEach(c => opts.push(`<option value="${T[k].key}.${c.name}">${T[k].schema}.${T[k].name}.${c.name}</option>`));
+  }
+  document.getElementById("tlist").innerHTML = opts.join("");
+}
+rebuildDatalist();
+
+// nodes
+for (const key in T) {
+  const t = T[key], H = hgt(t);
+  const g = el("g", {class:"node", tabindex:"0", role:"button", "aria-label":`${t.schema}.${t.name}`}, gNodes);
+  g.dataset.key = key;
+  el("rect", {class:"card", width:W, height:H, rx:6}, g);
+  el("path", {d:`M0,6 a6,6 0 0 1 6,-6 h${W-12} a6,6 0 0 1 6,6 v${HEAD-6} h${-W} z`, fill:colorOf(t.schema), "fill-opacity":".16"}, g);
+  el("rect", {x:0, y:0, width:W, height:3, fill:colorOf(t.schema), rx:1.5}, g);
+  el("line", {class:"sep", x1:0, x2:W, y1:HEAD, y2:HEAD}, g);
+  el("text", {class:"tname", x:12, y:20}, g).textContent = t.name;
+  if (t.rowCount != null) el("text", {class:"trowcount", x:W-12, y:20, "text-anchor":"end"}, g).textContent = `${t.rowCount.toLocaleString()} rows`;
+  t.columns.forEach((c,i) => {
+    const y = HEAD + i*ROW + ROW/2 + 6;
+    const tagText = c.isPk && c.isFk ? "PK,FK" : c.isPk ? "PK" : c.isFk ? "FK" : "";
+    el("text", {class:"ktag"+(c.isPk?" pk":""), x:12, y}, g).textContent = tagText;
+    if (c.isIdentity) el("circle", {class:"iddot", cx:38, cy:y-4, r:2}, g);
+    el("text", {class:"col", x:44, y}, g).textContent = c.name;
+    el("text", {class:"coltype", x:W-12, y, "text-anchor":"end"}, g).textContent = c.nullable ? `${c.typeLabel}?` : c.typeLabel;
+  });
+  const titleBits = [`${t.schema}.${t.name}`];
+  if (t.description) titleBits.push(t.description);
+  el("title", {}, g).textContent = titleBits.join(" — ");
+  t.g = g;
+}
+// edges
+FKS.forEach(f => {
+  f.el = el("path", {class:"edge"+(f.isSelfReferencing?" self":""), "marker-start":"url(#many)", "marker-end":"url(#one)"}, gEdges);
+  const colTxt = f.columns.map(c => `${c.childColumn} → ${c.parentColumn}`).join(", ");
+  el("title", {}, f.el).textContent = `${f.child} (${colTxt}) → ${f.parent}`;
+});
+
+function edgeD(f){
+  const c = T[f.child], p = T[f.parent];
+  const firstCol = f.columns[0];
+  const y1 = rowY(c, firstCol.childColumn), y2 = rowY(p, firstCol.parentColumn);
+  const cL = c.x, cR = c.x+W, pL = p.x, pR = p.x+W;
+  if (pL >= cR + 24) { const k = Math.max(40,(pL-cR)/2); return `M${cR},${y1} C${cR+k},${y1} ${pL-k},${y2} ${pL},${y2}`; }
+  if (pR <= cL - 24) { const k = Math.max(40,(cL-pR)/2); return `M${cL},${y1} C${cL-k},${y1} ${pR+k},${y2} ${pR},${y2}`; }
+  const b = Math.max(cR,pR) + 34 + Math.min(70, Math.abs(y2-y1)*0.12);
+  return `M${cR},${y1} C${b},${y1} ${b},${y2} ${pR},${y2}`;
+}
+function layout(){
+  for (const k in T) T[k].g.setAttribute("transform", `translate(${T[k].x},${T[k].y})`);
+  FKS.forEach(f => f.el.setAttribute("d", edgeD(f)));
+}
+function applyView(){
+  world.setAttribute("transform", `translate(${view.x},${view.y}) scale(${view.k})`);
+  document.getElementById("dots").setAttribute("patternTransform", `translate(${view.x},${view.y}) scale(${view.k})`);
+}
+
+function neighborsWithinHops(start, hops){
+  let frontier = new Set([start]);
+  const visited = new Set([start]);
+  for (let i=0;i<hops && frontier.size;i++){
+    const next = new Set();
+    frontier.forEach(n => FKS.forEach(f => {
+      if (f.child===n && !visited.has(f.parent)) next.add(f.parent);
+      if (f.parent===n && !visited.has(f.child)) next.add(f.child);
+    }));
+    next.forEach(n => visited.add(n));
+    frontier = next;
+  }
+  return visited;
+}
+
+function paint(){
+  const directNb = new Set();
+  if (selected) { directNb.add(selected); FKS.forEach(f => { if (f.child===selected) directNb.add(f.parent); if (f.parent===selected) directNb.add(f.child); }); }
+  const isolateSet = (selected && isolateHops > 0) ? neighborsWithinHops(selected, isolateHops) : null;
+
+  for (const k in T) {
+    const t = T[k];
+    const hiddenBySchema = hiddenSchemas.has(t.schema);
+    const hiddenByIsolate = isolateSet && !isolateSet.has(k);
+    t.g.style.display = (hiddenBySchema || hiddenByIsolate) ? "none" : "";
+    t.g.classList.toggle("sel", k === selected);
+    t.g.classList.toggle("dim", !!selected && !directNb.has(k));
+  }
+  FKS.forEach(f => {
+    const cHidden = T[f.child].g.style.display === "none", pHidden = T[f.parent].g.style.display === "none";
+    f.el.style.display = (cHidden || pHidden) ? "none" : "";
+    const hi = !!selected && (f.child===selected || f.parent===selected);
+    f.el.classList.toggle("hi", hi);
+    f.el.classList.toggle("dim", !!selected && !hi);
+    f.el.setAttribute("marker-start", hi ? "url(#manyHi)" : "url(#many)");
+    f.el.setAttribute("marker-end", hi ? "url(#oneHi)" : "url(#one)");
+    if (hi) gEdges.appendChild(f.el);
+  });
+  renderPanel();
+}
+
+// panel
+const panel = document.getElementById("panel");
+function renderPanel(){
+  const counts = {}; for (const k in T) counts[T[k].schema] = (counts[T[k].schema]||0)+1;
+  const legend = `<section><h2>Schemas</h2><div class="legend">${SCHEMAS.map(s =>
+    `<label><input type="checkbox" id="sch-${s.key}" data-schema="${s.key}" ${hiddenSchemas.has(s.key)?"":"checked"}><span class="sw" style="background:${colorOf(s.key)}"></span>${s.label}<span class="n">${counts[s.key]||0}</span></label>`).join("")}</div></section>`;
+
+  let body;
+  if (!selected) {
+    const gapsHtml = DATA.gaps.length
+      ? `<ul class="gaps">${DATA.gaps.map(g => {
+          const cls = g.reason === "ExternalReference" ? "ext" : g.reason === "SelfReferencing" ? "" : "warn";
+          return `<li class="${cls}"><code>${g.table}</code>${g.column ? `.<code>${g.column}</code>` : ""}: ${g.message}</li>`;
+        }).join("")}</ul>`
+      : `<p class="empty">No automatically-detected gaps.</p>`;
+    body = `<section><h2>Overview</h2><p class="intro">Auto-generated from live schema metadata. Click a table for its columns and relationships; the legend above filters by schema.</p></section>
+    <section><h2>Data notes (auto-detected, best-effort)</h2>${gapsHtml}</section>`;
+  } else {
+    const t = T[selected];
+    body = `<section>
+      <button class="link back" data-go="">← All tables</button>
+      <p class="detail-name">${t.schema}.${t.name}</p>
+      ${t.description ? `<p class="gloss">${t.description}</p>` : ""}
+      <span class="chip"><span class="sw" style="background:${colorOf(t.schema)}"></span>${t.schema}</span>
+      ${t.rowCount != null ? `<span class="rowcount"> · ${t.rowCount.toLocaleString()} rows</span>` : ""}
+    </section>
+    <section><h2>Columns (${t.columns.length})</h2><ul class="keys">
+      ${t.columns.map(c => renderColumnLi(t, c)).join("")}
+    </ul></section>
+    <section><h2>Referenced by (${FKS.filter(f=>f.parent===selected).length})</h2>${
+      FKS.some(f=>f.parent===selected)
+        ? `<ul class="keys">${FKS.filter(f=>f.parent===selected).map(f => {
+            const cols = f.columns.map(c=>c.childColumn).join(", ");
+            return `<li><span class="tag">FK</span><span><button class="link" data-go="${f.child}">${T[f.child].schema}.${T[f.child].name}</button>.${cols}</span></li>`;
+          }).join("")}</ul>`
+        : `<p class="empty">No table references ${t.schema}.${t.name}.</p>`
+    }</section>`;
+  }
+  panel.innerHTML = legend + body;
+}
+function renderColumnLi(t, c){
+  const tagText = c.isPk && c.isFk ? "PK,FK" : c.isPk ? "PK" : c.isFk ? "FK" : "";
+  const fk = FKS.find(f => f.child===selected && f.columns.some(p=>p.childColumn===c.name));
+  const fkLink = fk ? ` <span class="arrow">→</span> <button class="link" data-go="${fk.parent}">${T[fk.parent].schema}.${T[fk.parent].name}</button>` : "";
+  return `<li data-col="${c.name}">
+    <span class="tag${c.isPk?" pk":""}">${tagText}</span>
+    <span>
+      <span>${c.name}</span>
+      <span class="typelabel">${c.nullable ? c.typeLabel+"?" : c.typeLabel}</span>
+      ${c.isIdentity ? `<span class="idbadge">identity</span>` : ""}${fkLink}
+      ${c.description ? `<span class="coldesc">${c.description}</span>` : ""}
+    </span>
+  </li>`;
+}
+panel.addEventListener("change", e => {
+  const s = e.target.dataset.schema; if (!s) return;
+  e.target.checked ? hiddenSchemas.delete(s) : hiddenSchemas.add(s);
+  if (selected && hiddenSchemas.has(T[selected].schema)) selected = null;
+  paint();
+});
+panel.addEventListener("click", e => {
+  const b = e.target.closest("[data-go]"); if (!b) return;
+  select(b.dataset.go || null, !!b.dataset.go);
+});
+
+function select(key, center){
+  selected = key;
+  if (key && hiddenSchemas.has(T[key].schema)) hiddenSchemas.delete(T[key].schema);
+  paint();
+  if (key && center) centerOn(key);
+}
+function centerOn(key){
+  const t = T[key], r = svg.getBoundingClientRect();
+  view.x = r.width/2 - (t.x + W/2)*view.k;
+  view.y = r.height/2 - (t.y + hgt(t)/2)*view.k;
+  applyView();
+}
+function fit(){
+  const vis = Object.values(T).filter(t => t.g.style.display !== "none"); if (!vis.length) return;
+  const x0 = Math.min(...vis.map(t=>t.x)), y0 = Math.min(...vis.map(t=>t.y));
+  const x1 = Math.max(...vis.map(t=>t.x+W)) + 60, y1 = Math.max(...vis.map(t=>t.y+hgt(t)));
+  const r = svg.getBoundingClientRect(), pad = 24;
+  view.k = Math.min((r.width-2*pad)/(x1-x0), (r.height-2*pad)/(y1-y0), 1.25);
+  view.x = (r.width - (x1-x0)*view.k)/2 - x0*view.k;
+  view.y = (r.height - (y1-y0)*view.k)/2 - y0*view.k;
+  applyView();
+}
+function zoomAt(px, py, factor){
+  const k2 = Math.min(2.5, Math.max(0.15, view.k*factor));
+  view.x = px - (px - view.x)*(k2/view.k);
+  view.y = py - (py - view.y)*(k2/view.k);
+  view.k = k2; applyView();
+}
+
+// pointer: drag node, pan background, click select
+let drag = null;
+svg.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  const g = e.target.closest(".node");
+  const t = g ? T[g.dataset.key] : null;
+  drag = {sx:e.clientX, sy:e.clientY, t, ox: t ? t.x : view.x, oy: t ? t.y : view.y, moved:false};
+  svg.setPointerCapture(e.pointerId);
+  if (!t) svg.classList.add("panning");
+});
+svg.addEventListener("pointermove", e => {
+  if (!drag) return;
+  const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
+  if (!drag.moved && Math.hypot(dx,dy) < 4) return;
+  drag.moved = true;
+  if (drag.t) { drag.t.x = Math.round((drag.ox + dx/view.k)/10)*10; drag.t.y = Math.round((drag.oy + dy/view.k)/10)*10; layout(); }
+  else { view.x = drag.ox + dx; view.y = drag.oy + dy; applyView(); }
+});
+svg.addEventListener("pointerup", () => {
+  if (!drag) return;
+  svg.classList.remove("panning");
+  if (!drag.moved) select(drag.t ? (selected === drag.t.key ? null : drag.t.key) : null, false);
+  else if (drag.t) savePos();
+  drag = null;
+});
+svg.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = svg.getBoundingClientRect();
+  zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY*0.0015));
+}, {passive:false});
+gNodes.addEventListener("keydown", e => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.dataset.key) { e.preventDefault(); select(e.target.dataset.key, true); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape") select(null); });
+
+document.getElementById("fit").onclick = fit;
+document.getElementById("zoomIn").onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.2); };
+document.getElementById("zoomOut").onclick = () => { const r = svg.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.2); };
+document.getElementById("reset").onclick = () => {
+  for (const k in T) { T[k].x = T[k].x0; T[k].y = T[k].y0; }
+  try { localStorage.removeItem(POSKEY); } catch(e){}
+  layout(); fit();
+};
+document.getElementById("isolate").addEventListener("change", e => { isolateHops = Number(e.target.value)||0; paint(); });
+
+const q = document.getElementById("q");
+function findTable(){
+  const v = q.value.trim().toLowerCase(); if (!v) return;
+  const dotIdx = v.lastIndexOf(".");
+  // try table.column form first (qualified key has exactly one dot: schema.table — a second dot means .column)
+  for (const k in T) {
+    if (`${k}.`.toLowerCase() === v.slice(0, k.length+1) && v.length > k.length+1) {
+      const colName = v.slice(k.length+1);
+      const col = T[k].columns.find(c => c.name.toLowerCase() === colName);
+      if (col) { select(k, true); flashColumn(k, col.name); return; }
+    }
+  }
+  let hit = Object.keys(T).find(k => k.toLowerCase() === v)
+    || Object.keys(T).find(k => T[k].name.toLowerCase() === v)
+    || Object.keys(T).find(k => k.toLowerCase().startsWith(v))
+    || Object.keys(T).find(k => k.toLowerCase().includes(v));
+  if (hit) select(hit, true);
+}
+function flashColumn(key, colName){
+  requestAnimationFrame(() => {
+    const li = [...panel.querySelectorAll("li[data-col]")].find(el => el.dataset.col === colName);
+    if (li) { li.classList.add("col-hit"); setTimeout(() => li.classList.remove("col-hit"), 1600); li.scrollIntoView?.({block:"nearest"}); }
+  });
+}
+q.addEventListener("change", findTable);
+q.addEventListener("keydown", e => { if (e.key === "Enter") findTable(); });
+
+layout(); paint();
+requestAnimationFrame(fit);
+window.addEventListener("resize", () => { if (!drag) fit(); });
+</script>
+</body>
+</html>
