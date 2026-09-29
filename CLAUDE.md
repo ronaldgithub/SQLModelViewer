@@ -184,10 +184,13 @@ exists.
 ## CI / release
 
 `.github/workflows/ci.yml` builds and tests on every push/PR. `.github/workflows/release.yml`
-publishes a self-contained win-x64 build on `v*.*.*` tags to GitHub Releases. **It currently only
-publishes the CLI**, not the App — the release predates the App's completion. Add an
-`SQLModelViewer.App` publish step (same `dotnet publish -r win-x64 --self-contained true
--p:PublishSingleFile=true` pattern) before the next release if the App should ship too.
+publishes self-contained win-x64 builds of both the CLI and the App on `v*.*.*` tags, as two
+separate zips (`SQLModelViewer-CLI-*` and `SQLModelViewer-App-*`) attached to one GitHub Release —
+kept separate rather than combined since most people only want one or the other. Both publish steps
+pass `-p:DebugType=none` to skip generating our own `.pdb`s, but SkiaSharp/HarfBuzzSharp still ship
+their own native `.pdb` content files (~100MB combined) regardless of that flag, so there's an
+explicit `Remove-Item *.pdb` step before zipping — don't assume `DebugType=none` alone keeps the
+zip lean if a future dependency adds more of these.
 
 Getting the release workflow green took two fix-forward tags after the first attempt (`v0.1.0`
 failed on a CRLF/LF-dependent test regex breaking under the Windows runner's checkout, `v0.1.1`
@@ -206,8 +209,7 @@ session doesn't have to rediscover them if a similar workflow change regresses o
   which exercised the App's full connect → pick tables → generate → embedded-preview → drag →
   Open in Browser → Save As loop with a real, unconstrained FK-shaped column the `GapDetector`
   correctly flagged).
-- The App is not yet part of the release workflow (see CI/release above) — only the CLI ships in
-  GitHub Releases today.
+- Both the App and the CLI ship in GitHub Releases as of `v0.2.0`.
 
 ## Explicit non-goals
 

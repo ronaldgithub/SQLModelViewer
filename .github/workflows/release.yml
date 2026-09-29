@@ -23,21 +23,36 @@ jobs:
       - name: Test
         run: dotnet test SQLModelViewer.sln -c Release --no-restore
 
-      # SQLModelViewer.App (the Avalonia GUI) isn't built yet — this publishes the CLI, which is
-      # the only shippable artifact today. Add an App publish step here once it exists.
       - name: Publish CLI
         run: >
           dotnet publish src/SQLModelViewer.Cli/SQLModelViewer.Cli.csproj
           -c Release -r win-x64 --self-contained true
-          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
-          -o publish/win-x64
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
+          -o publish/cli-win-x64
+
+      - name: Publish App
+        run: >
+          dotnet publish src/SQLModelViewer.App/SQLModelViewer.App.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:DebugType=none
+          -o publish/app-win-x64
+
+      - name: Strip debug symbols
+        shell: pwsh
+        run: |
+          Remove-Item publish/cli-win-x64/*.pdb -ErrorAction SilentlyContinue
+          Remove-Item publish/app-win-x64/*.pdb -ErrorAction SilentlyContinue
 
       - name: Zip
         shell: pwsh
-        run: Compress-Archive -Path publish/win-x64/* -DestinationPath SQLModelViewer-${{ github.ref_name }}-win-x64.zip
+        run: |
+          Compress-Archive -Path publish/cli-win-x64/* -DestinationPath SQLModelViewer-CLI-${{ github.ref_name }}-win-x64.zip
+          Compress-Archive -Path publish/app-win-x64/* -DestinationPath SQLModelViewer-App-${{ github.ref_name }}-win-x64.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: SQLModelViewer-${{ github.ref_name }}-win-x64.zip
+          files: |
+            SQLModelViewer-App-${{ github.ref_name }}-win-x64.zip
+            SQLModelViewer-CLI-${{ github.ref_name }}-win-x64.zip
           generate_release_notes: true
