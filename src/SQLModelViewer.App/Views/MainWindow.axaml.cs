@@ -2,7 +2,6 @@ using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
-using SQLModelViewer.App.Services;
 using SQLModelViewer.App.ViewModels;
 
 namespace SQLModelViewer.App.Views;
@@ -36,10 +35,13 @@ public partial class MainWindow : Window
             await vm.SaveGeneratedFileAsAsync(file.Path.LocalPath);
     }
 
-    private void RecentConnection_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
+    private async void ConnectButton_Click(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
-        if (sender is Button { Tag: ConnectionProfile profile } && DataContext is MainWindowViewModel vm)
-            vm.Connection.ApplyProfile(profile);
+        if (DataContext is not MainWindowViewModel vm)
+            return;
+
+        var dialog = new ConnectionDialog { DataContext = vm.Connection };
+        await dialog.ShowDialog(this);
     }
 
     private void WebView2Link_PointerPressed(object? sender, PointerPressedEventArgs e)

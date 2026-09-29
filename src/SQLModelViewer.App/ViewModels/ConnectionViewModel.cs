@@ -15,7 +15,8 @@ public partial class ConnectionViewModel : ViewModelBase
     public IReadOnlyList<AuthMode> AuthModes { get; } = [AuthMode.Windows, AuthMode.Sql];
 
     [ObservableProperty]
-    private string server = string.Empty;
+    [NotifyPropertyChangedFor(nameof(ConnectionSummary))]
+    private string server = "localhost";
 
     [ObservableProperty]
     private AuthMode selectedAuthMode = AuthMode.Windows;
@@ -27,6 +28,7 @@ public partial class ConnectionViewModel : ViewModelBase
     private string password = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ConnectionSummary))]
     private string? selectedDatabase;
 
     [ObservableProperty]
@@ -36,10 +38,12 @@ public partial class ConnectionViewModel : ViewModelBase
     private string statusMessage = "Not connected.";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ConnectionSummary))]
     private bool isConnectedToServer;
 
     public bool IsSqlAuth => SelectedAuthMode == AuthMode.Sql;
     public bool HasRecentConnections => RecentConnections.Count > 0;
+    public string ConnectionSummary => IsConnectedToServer && SelectedDatabase != null ? $"{Server} / {SelectedDatabase}" : "Not connected.";
 
     public ConnectionViewModel(IConnectionProfileStore profileStore)
     {

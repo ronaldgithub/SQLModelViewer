@@ -21,9 +21,6 @@ public partial class MainWindowViewModel : ViewModelBase
     public PreviewViewModel Preview { get; }
 
     [ObservableProperty]
-    private bool includeRowCounts;
-
-    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GenerateCommand))]
     private bool isGenerating;
 
@@ -76,8 +73,11 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             await using var connection = new SqlConnection(Connection.BuildConnectionString());
             var tables = await introspector.ListTablesAsync(connection).ConfigureAwait(true);
-            SchemaTree.Load(tables);
-            StatusMessage = $"{tables.Count} tables found in {Connection.SelectedDatabase}. Select tables and click Generate.";
+            // sysdiagrams is an SSMS-internal support table (created the moment anyone opens the
+            // old Database Diagrams tool), never a real user table — exclude it by default.
+            var userTables = tables.Where(t => !t.Table.Equals("sysdiagrams", StringComparison.OrdinalIgnoreCase)).ToList();
+            SchemaTree.Load(userTables);
+            StatusMessage = $"{userTables.Count} tables found in {Connection.SelectedDatabase}. Select tables and click Generate.";
         }
         catch (Exception ex)
         {
@@ -95,7 +95,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             await using var connection = new SqlConnection(Connection.BuildConnectionString());
-            var options = new IntrospectionOptions { TableFilter = SchemaTree.SelectedTables, IncludeRowCounts = IncludeRowCounts };
+            var options = new IntrospectionOptions { TableFilter = SchemaTree.SelectedTables };
             var model = await introspector.IntrospectAsync(connection, options).ConfigureAwait(true);
 
             StatusMessage = "Computing layout...";

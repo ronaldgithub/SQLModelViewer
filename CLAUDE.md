@@ -81,9 +81,19 @@ tests/
   the "no diagram yet" placeholder and the WebView2-unavailable fallback behind it.
 - App/`ViewModels/MainWindowViewModel.cs` — orchestrates `ConnectionViewModel` (server/auth/database
   picker, recent-connections via `IConnectionProfileStore`), `SchemaTreeViewModel` (checkbox tree
-  over `ListTablesAsync`'s lightweight table listing, tri-state schema-level cascading), and
+  over `ListTablesAsync`'s lightweight table listing, tri-state schema-level cascading, and filters
+  out `sysdiagrams` — an SSMS-internal artifact table, never a real user table), and
   `PreviewViewModel`. `GenerateAsync` is the same Introspect → Layout → Generate pipeline the CLI
   runs, just invoked from the UI thread with status updates instead of console output.
+- App/`Views/ConnectionDialog.axaml(.cs)` — the connection UI (server/auth/database picker, recent
+  connections) lives in a modal dialog opened from a "Connect…" button in the sidebar, not inline —
+  this was a deliberate change from the first cut of the UI, which embedded it directly in the
+  sidebar and ate too much vertical space that the table tree needed. It shares the same
+  `ConnectionViewModel` instance as the main window (passed in as `DataContext`), so property
+  changes make during the dialog (e.g. `SelectedDatabase`) are already visible to
+  `MainWindowViewModel`'s existing `PropertyChanged` subscription before the dialog even closes —
+  no extra plumbing needed. Picking a database (by hand or via a recent-connection auto-reconnect)
+  closes the dialog immediately; there's no separate "OK" button for that step.
 
 ## Data flow
 
